@@ -461,40 +461,35 @@
     function val(id) { return document.getElementById(id)?.value?.trim() || ''; }
     function checked(id) { return document.getElementById(id)?.checked || false; }
 
-    function buildPerson(id) {
+    function getPersonData(id) {
       const name = val(`name-${id}`);
       if (!name) return null;
+      const modules = {};
+      MODULES.forEach(m => {
+        modules[m.id] = { checked: checked(`${m.id}-${id}`), detail: m.detail ? val(`${m.id}-${id}-txt`) : null };
+      });
+      return { name, hitrate: val(`hr-${id}`), gp: val(`gp-${id}`), modules };
+    }
 
-      const hr = val(`hr-${id}`);
-      const gp = val(`gp-${id}`);
+    function buildModuleLines(person, limitToIds) {
+      const has = id => person.modules[id].checked && (!limitToIds || limitToIds.includes(id));
+      const det = id => person.modules[id].detail || '';
       const lines = [];
 
-      let header = name;
-      if (hr || gp) {
-        const parts = [];
-        if (hr) parts.push(`${hr}% hit rate`);
-        if (gp) parts.push(`${gp}% GP`);
-        header += ` — ${parts.join(', ')}`;
-      }
-      lines.push(header);
-
-      if (checked(`struggling-${id}`)) {
-        const r = val(`struggling-${id}-txt`);
+      if (has('struggling')) {
+        const r = det('struggling');
         lines.push(r ? `Has had a tough run — ${r.replace(/\.$/, '')}.` : 'Has had a tough run recently.');
       }
-
-      if (checked(`improving-${id}`)) {
-        const r = val(`improving-${id}-txt`);
+      if (has('improving')) {
+        const r = det('improving');
         lines.push(r ? `Has picked things up since last visit — ${r.replace(/\.$/, '')}.` : 'Has picked things up since the last visit.');
       }
-
-      if (checked(`basics-${id}`)) {
+      if (has('basics')) {
         lines.push('Back to basics — getting in early with the introduction is key.');
         lines.push('Asking great qualifying questions and basing where and when product care is introduced on those answers.');
       }
-
-      if (checked(`objections-${id}`)) {
-        const r = val(`objections-${id}-txt`);
+      if (has('objections')) {
+        const r = det('objections');
         if (r) {
           lines.push(`Deep dive into objections being heard — ${r.replace(/\.$/, '')}.`);
           lines.push('All related to timing. Refreshed on how to get an earlier introduction — simply by asking questions and relating the answers to product care.');
@@ -502,55 +497,128 @@
           lines.push('Deep dive into objections. Refreshed on how to handle these earlier in the sale.');
         }
       }
-
-      if (checked(`pitchpeak-${id}`)) {
-        lines.push('Refreshed on Pitch at Peak for the busier periods and smaller sales.');
-      }
-
-      if (checked(`security-${id}`)) {
+      if (has('pitchpeak'))   lines.push('Refreshed on Pitch at Peak for the busier periods and smaller sales.');
+      if (has('security')) {
         lines.push('Focus on Connected Security — particularly the importance of batteries and how they are looked after under product care.');
         lines.push('Punch the bruise of having your system go down and offer product care as the solution.');
       }
-
-      if (checked(`powerbi-${id}`)) {
-        lines.push('Walked through Power BI together — bookmarked on their computer.');
-      }
-
-      if (checked(`staffcomms-${id}`)) {
-        const r = val(`staffcomms-${id}-txt`);
+      if (has('powerbi'))     lines.push('Walked through Power BI together — bookmarked on their computer.');
+      if (has('staffcomms')) {
+        const r = det('staffcomms');
         lines.push(r ? `Staff comms issue — ${r.replace(/\.$/, '')}.` : 'Staff are not receiving regular updates on where they are up to.');
       }
-
-      if (checked(`twopic-${id}`)) {
-        lines.push('Learning the 2IC role on the floor — this has had some impact on results.');
-      }
-
-      if (checked(`virtual-${id}`)) {
-        const r = val(`virtual-${id}-txt`);
+      if (has('twopic'))      lines.push('Learning the 2IC role on the floor — this has had some impact on results.');
+      if (has('virtual')) {
+        const r = det('virtual');
         lines.push(r ? `Locked in for a virtual session on ${r}.` : 'Virtual session to be locked in.');
       }
-
-      if (checked(`incentive-${id}`)) {
-        const r = val(`incentive-${id}-txt`);
+      if (has('incentive')) {
+        const r = det('incentive');
         lines.push(r ? `Spoke about a staff incentive for ${r}.` : 'Spoke about a staff incentive.');
       }
-
-      if (checked(`salvage-${id}`)) {
-        const r = val(`salvage-${id}-txt`);
+      if (has('salvage')) {
+        const r = det('salvage');
         lines.push(r ? `Salvage — ${r.replace(/\.$/, '')}.` : 'No salvage issues.');
       }
+      if (has('custom') && det('custom')) lines.push(det('custom'));
+      return lines;
+    }
 
-      if (checked(`custom-${id}`) && val(`custom-${id}-txt`)) {
-        lines.push(val(`custom-${id}-txt`));
+    function buildExtraLine(name, moduleId, detail) {
+      const d = (detail || '').replace(/\.$/, '');
+      const map = {
+        basics:     `${name} also went back to basics on early introduction and qualifying questions.`,
+        pitchpeak:  `${name} also picked up a refresh on Pitch at Peak for the busier periods and smaller sales.`,
+        objections: d ? `${name} also did a deep dive on objections — ${d}.` : `${name} also worked through objection handling.`,
+        struggling: d ? `${name} has had a tough run — ${d}.` : `${name} has been having a tough run.`,
+        improving:  d ? `${name} has picked things up — ${d}.` : `${name} has been on an upward trend.`,
+        salvage:    d ? `${name} — salvage: ${d}.` : `No salvage issues for ${name}.`,
+        powerbi:    `${name} also got a Power BI walkthrough — bookmarked on their computer.`,
+        staffcomms: d ? `${name} — staff comms: ${d}.` : `${name} had a staff comms issue to work through.`,
+        virtual:    d ? `${name} also locked in for a virtual session on ${d}.` : `${name} to have a virtual session locked in.`,
+        twopic:     `${name} is also working through the 2IC role on the floor.`,
+        incentive:  d ? `${name} also discussed a staff incentive for ${d}.` : `${name} also discussed a staff incentive.`,
+        security:   `${name} also covered Connected Security — batteries and product care.`,
+        custom:     d,
+      };
+      return map[moduleId] || '';
+    }
+
+    function personStatsLabel(p, separator) {
+      const stats = [];
+      if (p.hitrate) stats.push(`${p.hitrate}% hit rate`);
+      if (p.gp) stats.push(`${p.gp}% GP`);
+      return stats.length ? `${p.name}${separator}${stats.join(', ')}` : p.name;
+    }
+
+    function groupPeople(people) {
+      if (people.length <= 1) return people.map(p => ({ members: [p], commonIds: null, extras: {} }));
+
+      const counts = {};
+      MODULES.forEach(m => { counts[m.id] = 0; });
+      people.forEach(p => MODULES.forEach(m => { if (p.modules[m.id].checked) counts[m.id]++; }));
+
+      const commonIds = MODULES.filter(m => counts[m.id] >= 2).map(m => m.id);
+
+      if (commonIds.length < 2) return people.map(p => ({ members: [p], commonIds: null, extras: {} }));
+
+      const inGroup  = people.filter(p =>  commonIds.every(id => p.modules[id].checked));
+      const soloGroup = people.filter(p => !commonIds.every(id => p.modules[id].checked));
+
+      const extras = {};
+      inGroup.forEach(p => {
+        const ex = MODULES.filter(m => p.modules[m.id].checked && !commonIds.includes(m.id));
+        if (ex.length) extras[p.name] = ex.map(m => m.id);
+      });
+
+      const result = [];
+      if (inGroup.length >= 2) result.push({ members: inGroup, commonIds, extras });
+      else if (inGroup.length === 1) result.push({ members: inGroup, commonIds: null, extras: {} });
+      soloGroup.forEach(p => result.push({ members: [p], commonIds: null, extras: {} }));
+      return result;
+    }
+
+    function buildGroupText(group) {
+      const { members, commonIds, extras } = group;
+      const lines = [];
+
+      if (members.length === 1) {
+        lines.push(personStatsLabel(members[0], ' — '));
+        lines.push(...buildModuleLines(members[0], null));
+        return lines.join('\n');
       }
+
+      // Grouped header: "Dave (28%, 35% GP) and Lisa (18%, 30% GP)"
+      const headerParts = members.map(p => personStatsLabel(p, ' (').replace(/( \()(.+)$/, '$1$2)').replace(/^([^(]+)$/, '$1'));
+      // Tidy up: wrap stats in parens only when stats exist
+      const neatParts = members.map(p => {
+        const stats = [];
+        if (p.hitrate) stats.push(`${p.hitrate}% hit rate`);
+        if (p.gp) stats.push(`${p.gp}% GP`);
+        return stats.length ? `${p.name} (${stats.join(', ')})` : p.name;
+      });
+      lines.push(neatParts.length === 2
+        ? `${neatParts[0]} and ${neatParts[1]}`
+        : `${neatParts.slice(0, -1).join(', ')} and ${neatParts[neatParts.length - 1]}`);
+
+      // Shared content using first member as template
+      lines.push(...buildModuleLines(members[0], commonIds));
+
+      // Unique extras per person
+      members.forEach(p => {
+        (extras[p.name] || []).forEach(modId => {
+          const line = buildExtraLine(p.name, modId, p.modules[modId].detail);
+          if (line) lines.push(line);
+        });
+      });
 
       return lines.join('\n');
     }
 
     function generate() {
       const store = val('storeName');
-      const date = document.getElementById('visitDate').value;
-      const type = document.getElementById('visitType').value;
+      const date  = document.getElementById('visitDate').value;
+      const type  = document.getElementById('visitType').value;
 
       let dateStr = '';
       if (date) {
@@ -558,24 +626,19 @@
         dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
       }
 
-      const cards = document.querySelectorAll('.person-card');
-      const sections = [];
-
-      cards.forEach(card => {
-        const id = card.id.replace('person-', '');
-        const text = buildPerson(id);
-        if (text) sections.push(text);
+      const people = [];
+      document.querySelectorAll('.person-card').forEach(card => {
+        const data = getPersonData(card.id.replace('person-', ''));
+        if (data) people.push(data);
       });
 
-      if (!store && sections.length === 0) {
-        showToast('Add a store name and at least one person.');
-        return;
-      }
+      if (!store && people.length === 0) { showToast('Add a store name and at least one person.'); return; }
 
-      const parts = [`CVR | ${store} | ${dateStr}`, '', type, ''];
-      sections.forEach((s, i) => {
-        parts.push(s);
-        if (i < sections.length - 1) parts.push('');
+      const groups = groupPeople(people);
+      const parts  = [`CVR | ${store} | ${dateStr}`, '', type, ''];
+      groups.forEach((g, i) => {
+        parts.push(buildGroupText(g));
+        if (i < groups.length - 1) parts.push('');
       });
 
       document.getElementById('outputText').textContent = parts.join('\n');
