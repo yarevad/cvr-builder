@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>CVR Builder</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CVR Builder">
+  <style>
+    :root {
+      --blue: #1a73e8;
+      --blue-light: #e8f0fe;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --red: #ef4444;
+      --green: #10b981;
+      --imessage: #34C759;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+    header {
+      background: var(--blue);
+      color: white;
+      padding: 18px 20px 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    header h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.3px; }
+    header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--blue);
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input[type="text"], input[type="date"], select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 15px;
+      color: var(--text);
+      background: white;
+      margin-bottom: 13px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+    }
+    .person-card {
+      background: #f8faff;
+      border: 1.5px solid #d8e6ff;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+    .person-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+    .person-number {
+      background: var(--blue);
+      color: white;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .person-name-preview {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .remove-btn:hover { color: var(--red); }
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stats-row > div input { margin-bottom: 0; }
+    .divider {
+      border: none;
+      border-top: 1px solid #eaefff;
+      margin: 12px 0 10px;
+    }
+    .module-list { display: flex; flex-direction: column; gap: 2px; }
+    .module-row {
+      padding: 7px 4px;
+      border-bottom: 1px solid #f0f3ff;
+    }
+    .module-row:last-child { border-bottom: none; }
+    .module-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .module-check input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      accent-color: var(--blue);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .module-check span {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .module-detail {
+      margin-top: 7px;
+      margin-left: 29px;
+      display: none;
+    }
+    .module-detail input {
+      font-size: 13px;
+      padding: 8px 11px;
+      margin-bottom: 0;
+      background: white;
+    }
+    .module-detail.visible { display: block; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 11px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 10px;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: -0.2px;
+    }
+    .btn:active { opacity: 0.82; transform: scale(0.985); }
+    .btn-add {
+      background: var(--blue-light);
+      color: var(--blue);
+      border: 1.5px dashed #a0c0ff;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px;
+      border-radius: 10px;
+    }
+    .btn-generate { background: var(--blue); color: white; }
+    .btn-copy { background: var(--green); color: white; }
+    .btn-imessage {
+      background: var(--imessage);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .imessage-icon {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .output-box {
+      background: #f0f5ff;
+      border: 1.5px solid #c8d8ff;
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 80px;
+      margin-bottom: 14px;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .hidden { display: none; }
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 10px 22px;
+      border-radius: 22px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.25s;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+    .reset-row {
+      text-align: center;
+      margin-top: 6px;
+    }
+    .reset-link {
+      font-size: 13px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .settings-link {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      margin-top: 4px;
+      display: inline-block;
+    }
+    .settings-link:hover { color: white; }
+    .number-saved {
+      font-size: 12px;
+      color: var(--green);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .number-missing {
+      font-size: 12px;
+      color: #f59e0b;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .btn-imessage.no-number { background: #9ca3af; }
+    .save-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .save-row input { flex: 1; margin-bottom: 0; }
+    .btn-save {
+      padding: 11px 18px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-save:active { opacity: 0.82; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CVR Builder</h1>
+    <p>Generate your Salesforce Key Actions &nbsp;·&nbsp;
+      <a class="settings-link" href="#settings">⚙ Settings</a>
+    </p>
+  </header>
+
+  <div class="container">
+
+    <!-- Visit Details -->
+    <div class="card">
+      <div class="card-title">Visit Details</div>
+      <label>Store / Manager</label>
+      <input type="text" id="storeName" placeholder="e.g. Chermside — Pete">
+      <label>Visit Date</label>
+      <input type="date" id="visitDate">
+      <label>Visit Type</label>
+      <select id="visitType">
+        <option>One on One Coaching</option>
+        <option>Group Training</option>
+        <option>Business Meeting</option>
+        <option>Relationship Building</option>
+        <option>Engagement from Prop</option>
+      </select>
+    </div>
+
+    <!-- People -->
+    <div class="card">
+      <div class="card-title">Team Members</div>
+      <div id="peopleContainer"></div>
+      <button class="btn btn-add" onclick="addPerson()">+ Add Person</button>
+    </div>
+
+    <!-- Generate -->
+    <button class="btn btn-generate" onclick="generate()">Generate Key Actions</button>
+
+    <!-- Settings -->
+    <div class="card" id="settings">
+      <div class="card-title">Settings</div>
+      <label>Your Mobile Number (for iMessage)</label>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Saved on this device only — never in the code or on GitHub.</p>
+      <div class="save-row">
+        <input type="text" id="settingsNumber" placeholder="e.g. 0408795102 or +61408795102">
+        <button class="btn-save" onclick="saveSettings()">Save</button>
+      </div>
+      <div id="numberStatus"></div>
+    </div>
+
+    <!-- Output -->
+    <div id="outputSection" class="hidden">
+      <div class="card">
+        <div class="card-title">Key Actions — Ready to Paste</div>
+        <div id="outputText" class="output-box"></div>
+        <button class="btn btn-copy" onclick="copyText()">Copy to Clipboard</button>
+        <button class="btn btn-imessage" onclick="sendViaIMessage()">
+          <span class="imessage-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#34C759"><path d="M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+          </span>
+          Send via iMessage to Mac
+        </button>
+        <div class="reset-row">
+          <button class="reset-link" onclick="resetForm()">Start a new CVR</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const MODULES = [
+      { id: 'basics',     label: 'Back to basics / early intro',  detail: false },
+      { id: 'pitchpeak',  label: 'Pitch at Peak',                 detail: false },
+      { id: 'objections', label: 'Objection handling',            detail: true,  ph: 'Objections heard...' },
+      { id: 'struggling', label: 'Struggling',                    detail: true,  ph: 'Reason / context...' },
+      { id: 'improving',  label: 'Improving',                     detail: true,  ph: "What's working..." },
+      { id: 'salvage',    label: 'Salvage',                       detail: true,  ph: 'Status...' },
+      { id: 'powerbi',    label: 'Power BI walkthrough',          detail: false },
+      { id: 'staffcomms', label: 'Staff comms issue',             detail: true,  ph: 'Detail...' },
+      { id: 'virtual',    label: 'Virtual session booked',        detail: true,  ph: 'Date...' },
+      { id: 'twopic',     label: '2IC / leadership chat',         detail: false },
+      { id: 'incentive',  label: 'Incentive discussion',          detail: true,  ph: 'Month...' },
+      { id: 'security',   label: 'Connected Security focus',      detail: false },
+      { id: 'custom',     label: 'Custom note',                   detail: true,  ph: 'Your note...' },
+    ];
+
+    let personCount = 0;
+
+    document.getElementById('visitDate').valueAsDate = new Date();
+
+    function addPerson() {
+      personCount++;
+      const id = personCount;
+      const div = document.createElement('div');
+      div.className = 'person-card';
+      div.id = `person-${id}`;
+
+      const modules = MODULES.map(m => `
+        <div class="module-row">
+          <label class="module-check" for="${m.id}-${id}">
+            <input type="checkbox" id="${m.id}-${id}"
+              onchange="toggleDetail('${m.id}-${id}-det', this.checked)">
+            <span>${m.label}</span>
+          </label>
+          ${m.detail ? `<div class="module-detail" id="${m.id}-${id}-det">
+            <input type="text" placeholder="${m.ph}" id="${m.id}-${id}-txt">
+          </div>` : ''}
+        </div>
+      `).join('');
+
+      div.innerHTML = `
+        <div class="person-header">
+          <div class="person-number">${id}</div>
+          <div class="person-name-preview" id="preview-${id}">Name</div>
+          <button class="remove-btn" onclick="removePerson(${id})">×</button>
+        </div>
+        <label>Name</label>
+        <input type="text" id="name-${id}" placeholder="e.g. Rob"
+          oninput="document.getElementById('preview-${id}').textContent = this.value || 'Name'">
+        <div class="stats-row">
+          <div>
+            <label>Hit Rate %</label>
+            <input type="text" id="hr-${id}" placeholder="e.g. 28">
+          </div>
+          <div>
+            <label>GP %</label>
+            <input type="text" id="gp-${id}" placeholder="e.g. 41">
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="module-list">${modules}</div>
+      `;
+
+      document.getElementById('peopleContainer').appendChild(div);
+    }
+
+    function removePerson(id) {
+      document.getElementById(`person-${id}`)?.remove();
+    }
+
+    function toggleDetail(elId, show) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.classList.toggle('visible', show);
+      if (!show) {
+        const input = el.querySelector('input');
+        if (input) input.value = '';
+      }
+    }
+
+    function val(id) { return document.getElementById(id)?.value?.trim() || ''; }
+    function checked(id) { return document.getElementById(id)?.checked || false; }
+
+    function buildPerson(id) {
+      const name = val(`name-${id}`);
+      if (!name) return null;
+
+      const hr = val(`hr-${id}`);
+      const gp = val(`gp-${id}`);
+      const lines = [];
+
+      let header = name;
+      if (hr || gp) {
+        const parts = [];
+        if (hr) parts.push(`${hr}% hit rate`);
+        if (gp) parts.push(`${gp}% GP`);
+        header += ` — ${parts.join(', ')}`;
+      }
+      lines.push(header);
+
+      if (checked(`struggling-${id}`)) {
+        const r = val(`struggling-${id}-txt`);
+        lines.push(r ? `Has had a tough run — ${r.replace(/\.$/, '')}.` : 'Has had a tough run recently.');
+      }
+
+      if (checked(`improving-${id}`)) {
+        const r = val(`improving-${id}-txt`);
+        lines.push(r ? `Has picked things up since last visit — ${r.replace(/\.$/, '')}.` : 'Has picked things up since the last visit.');
+      }
+
+      if (checked(`basics-${id}`)) {
+        lines.push('Back to basics — getting in early with the introduction is key.');
+        lines.push('Asking great qualifying questions and basing where and when product care is introduced on those answers.');
+      }
+
+      if (checked(`objections-${id}`)) {
+        const r = val(`objections-${id}-txt`);
+        if (r) {
+          lines.push(`Deep dive into objections being heard — ${r.replace(/\.$/, '')}.`);
+          lines.push('All related to timing. Refreshed on how to get an earlier introduction — simply by asking questions and relating the answers to product care.');
+        } else {
+          lines.push('Deep dive into objections. Refreshed on how to handle these earlier in the sale.');
+        }
+      }
+
+      if (checked(`pitchpeak-${id}`)) {
+        lines.push('Refreshed on Pitch at Peak for the busier periods and smaller sales.');
+      }
+
+      if (checked(`security-${id}`)) {
+        lines.push('Focus on Connected Security — particularly the importance of batteries and how they are looked after under product care.');
+        lines.push('Punch the bruise of having your system go down and offer product care as the solution.');
+      }
+
+      if (checked(`powerbi-${id}`)) {
+        lines.push('Walked through Power BI together — bookmarked on their computer.');
+      }
+
+      if (checked(`staffcomms-${id}`)) {
+        const r = val(`staffcomms-${id}-txt`);
+        lines.push(r ? `Staff comms issue — ${r.replace(/\.$/, '')}.` : 'Staff are not receiving regular updates on where they are up to.');
+      }
+
+      if (checked(`twopic-${id}`)) {
+        lines.push('Learning the 2IC role on the floor — this has had some impact on results.');
+      }
+
+      if (checked(`virtual-${id}`)) {
+        const r = val(`virtual-${id}-txt`);
+        lines.push(r ? `Locked in for a virtual session on ${r}.` : 'Virtual session to be locked in.');
+      }
+
+      if (checked(`incentive-${id}`)) {
+        const r = val(`incentive-${id}-txt`);
+        lines.push(r ? `Spoke about a staff incentive for ${r}.` : 'Spoke about a staff incentive.');
+      }
+
+      if (checked(`salvage-${id}`)) {
+        const r = val(`salvage-${id}-txt`);
+        lines.push(r ? `Salvage — ${r.replace(/\.$/, '')}.` : 'No salvage issues.');
+      }
+
+      if (checked(`custom-${id}`) && val(`custom-${id}-txt`)) {
+        lines.push(val(`custom-${id}-txt`));
+      }
+
+      return lines.join('\n');
+    }
+
+    function generate() {
+      const store = val('storeName');
+      const date = document.getElementById('visitDate').value;
+      const type = document.getElementById('visitType').value;
+
+      let dateStr = '';
+      if (date) {
+        const d = new Date(date + 'T00:00:00');
+        dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      }
+
+      const cards = document.querySelectorAll('.person-card');
+      const sections = [];
+
+      cards.forEach(card => {
+        const id = card.id.replace('person-', '');
+        const text = buildPerson(id);
+        if (text) sections.push(text);
+      });
+
+      if (!store && sections.length === 0) {
+        showToast('Add a store name and at least one person.');
+        return;
+      }
+
+      const parts = [`CVR | ${store} | ${dateStr}`, '', type, ''];
+      sections.forEach((s, i) => {
+        parts.push(s);
+        if (i < sections.length - 1) parts.push('');
+      });
+
+      document.getElementById('outputText').textContent = parts.join('\n');
+      document.getElementById('outputSection').classList.remove('hidden');
+      setTimeout(() => document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' }), 50);
+    }
+
+    function copyText() {
+      const text = document.getElementById('outputText').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard');
+      }).catch(() => {
+        showToast('Select and copy manually');
+      });
+    }
+
+    function sendViaIMessage() {
+      const number = localStorage.getItem('cvrNumber');
+      if (!number) {
+        showToast('Set your number in Settings first.');
+        document.getElementById('settings').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      const text = document.getElementById('outputText').textContent;
+      window.location.href = `sms:${number}?body=${encodeURIComponent(text)}`;
+    }
+
+    function saveSettings() {
+      const raw = document.getElementById('settingsNumber').value.trim();
+      if (!raw) { showToast('Enter a number first.'); return; }
+      localStorage.setItem('cvrNumber', raw);
+      updateNumberStatus(raw);
+      showToast('Number saved.');
+    }
+
+    function loadSettings() {
+      const saved = localStorage.getItem('cvrNumber');
+      if (saved) {
+        document.getElementById('settingsNumber').value = saved;
+        updateNumberStatus(saved);
+      } else {
+        updateNumberStatus(null);
+      }
+    }
+
+    function updateNumberStatus(number) {
+      const btn = document.querySelector('.btn-imessage');
+      const status = document.getElementById('numberStatus');
+      if (number) {
+        status.innerHTML = `<div class="number-saved">✓ Saved: ${number}</div>`;
+        btn?.classList.remove('no-number');
+      } else {
+        status.innerHTML = `<div class="number-missing">⚠ No number saved — set it below before sending.</div>`;
+        btn?.classList.add('no-number');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('storeName').value = '';
+      document.getElementById('visitDate').valueAsDate = new Date();
+      document.getElementById('visitType').selectedIndex = 0;
+      document.getElementById('peopleContainer').innerHTML = '';
+      document.getElementById('outputSection').classList.add('hidden');
+      personCount = 0;
+      addPerson();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    addPerson();
+    loadSettings();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
