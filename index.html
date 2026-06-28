@@ -728,7 +728,8 @@
 
       const groups = groupPeople(people);
       const storeHeader = `CVR | ${store} | ${currentDept} | ${dateStr}${storeHitRate ? ` | Store Hit Rate: ${storeHitRate}%` : ''}`;
-      const parts  = [storeHeader, '', type, ''];
+      const namesList = people.map(p => p.name).join(', ');
+      const parts  = [storeHeader, namesList, '', type, ''];
       groups.forEach((g, i) => {
         parts.push(buildGroupText(g));
         if (i < groups.length - 1) parts.push('');
