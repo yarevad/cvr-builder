@@ -325,6 +325,9 @@
       margin-top: 2px;
       cursor: pointer;
     }
+    .sub-detail { display: none; margin-left: 24px; margin-top: 4px; margin-bottom: 2px; }
+    .sub-detail.visible { display: block; }
+    .sub-detail input { font-size: 13px; padding: 7px 10px; margin-bottom: 0; background: white; }
   </style>
 </head>
 <body>
@@ -419,7 +422,7 @@
       { id: 'ei',   label: 'Earlier Introduction' },
       { id: 'disc', label: 'Using "Are you upgrading or replacing?" to help discovery' },
       { id: 'pc',   label: 'Do you normally take advantage of Product Care?' },
-      { id: 'opp',  label: 'Identify where the opportunities lie for improvement' },
+      { id: 'opp',  label: 'Identify where the opportunities lie for improvement', hasDetail: true },
     ];
 
     let personCount = 0;
@@ -442,9 +445,13 @@
         } else if (m.id === 'iq') {
           const subs = IQ_SUBS.map(s => `
             <label class="sub-check">
-              <input type="checkbox" id="iq-${s.id}-${id}">
+              <input type="checkbox" id="iq-${s.id}-${id}"
+                ${s.hasDetail ? `onchange="toggleDetail('iq-${s.id}-${id}-det', this.checked)"` : ''}>
               <span>${s.label}</span>
-            </label>`).join('');
+            </label>
+            ${s.hasDetail ? `<div class="sub-detail" id="iq-${s.id}-${id}-det">
+              <input type="text" placeholder="Where are the opportunities?" id="iq-${s.id}-${id}-txt">
+            </div>` : ''}`).join('');
           detailHTML = `<div class="module-detail sub-options" id="iq-${id}-det">${subs}</div>`;
         }
         return `
@@ -510,7 +517,8 @@
       });
       const iqSubs = {};
       IQ_SUBS.forEach(s => { iqSubs[s.id] = checked(`iq-${s.id}-${id}`); });
-      return { name, hitrate: val(`hr-${id}`), gp: val(`gp-${id}`), modules, iqSubs };
+      const iqOppDetail = val(`iq-opp-${id}-txt`);
+      return { name, hitrate: val(`hr-${id}`), gp: val(`gp-${id}`), modules, iqSubs, iqOppDetail };
     }
 
     function buildModuleLines(person, limitToIds) {
@@ -550,7 +558,12 @@
         if (s.ei)   lines.push('Focus on getting an earlier introduction into the sale.');
         if (s.disc) lines.push('Working on using "Are you upgrading or replacing?" to help with discovery.');
         if (s.pc)   lines.push('"Do you normally take advantage of Product Care?" — using this to open the conversation.');
-        if (s.opp)  lines.push('Identified where the opportunities lie for improvement.');
+        if (s.opp) {
+          const r = (person.iqOppDetail || '').replace(/\.$/, '');
+          lines.push(r
+            ? `Identified where the opportunities lie for improvement — ${r}.`
+            : 'Identified where the opportunities lie for improvement.');
+        }
       }
       if (has('staffcomms')) {
         const r = det('staffcomms');
