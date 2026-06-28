@@ -304,6 +304,26 @@
       flex-shrink: 0;
     }
     .btn-save:active { opacity: 0.82; }
+    .sub-options { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+    .sub-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 5px 0;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      border-bottom: 1px solid #f0f3ff;
+    }
+    .sub-check:last-child { border-bottom: none; }
+    .sub-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--blue);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -385,13 +405,20 @@
       { id: 'struggling', label: 'Struggling',                    detail: true,  ph: 'Reason / context...' },
       { id: 'improving',  label: 'Improving',                     detail: true,  ph: "What's working..." },
       { id: 'salvage',    label: 'Salvage',                       detail: true,  ph: 'Status...' },
-      { id: 'powerbi',    label: 'Power BI walkthrough',          detail: false },
+      { id: 'iq',         label: 'Reviewed Individual Performance with IQ', detail: false },
       { id: 'staffcomms', label: 'Staff comms issue',             detail: true,  ph: 'Detail...' },
       { id: 'virtual',    label: 'Virtual session booked',        detail: true,  ph: 'Date...' },
       { id: 'twopic',     label: '2IC / leadership chat',         detail: false },
       { id: 'incentive',  label: 'Incentive discussion',          detail: true,  ph: 'Month...' },
       { id: 'security',   label: 'Connected Security focus',      detail: false },
       { id: 'custom',     label: 'Custom note',                   detail: true,  ph: 'Your note...' },
+    ];
+
+    const IQ_SUBS = [
+      { id: 'ei',   label: 'Earlier Introduction' },
+      { id: 'disc', label: 'Using "Are you upgrading or replacing?" to help discovery' },
+      { id: 'pc',   label: 'Do you normally take advantage of Product Care?' },
+      { id: 'opp',  label: 'Identify where the opportunities lie for improvement' },
     ];
 
     let personCount = 0;
@@ -405,18 +432,30 @@
       div.className = 'person-card';
       div.id = `person-${id}`;
 
-      const modules = MODULES.map(m => `
-        <div class="module-row">
-          <label class="module-check" for="${m.id}-${id}">
-            <input type="checkbox" id="${m.id}-${id}"
-              onchange="toggleDetail('${m.id}-${id}-det', this.checked)">
-            <span>${m.label}</span>
-          </label>
-          ${m.detail ? `<div class="module-detail" id="${m.id}-${id}-det">
+      const modules = MODULES.map(m => {
+        let detailHTML = '';
+        if (m.detail) {
+          detailHTML = `<div class="module-detail" id="${m.id}-${id}-det">
             <input type="text" placeholder="${m.ph}" id="${m.id}-${id}-txt">
-          </div>` : ''}
-        </div>
-      `).join('');
+          </div>`;
+        } else if (m.id === 'iq') {
+          const subs = IQ_SUBS.map(s => `
+            <label class="sub-check">
+              <input type="checkbox" id="iq-${s.id}-${id}">
+              <span>${s.label}</span>
+            </label>`).join('');
+          detailHTML = `<div class="module-detail sub-options" id="iq-${id}-det">${subs}</div>`;
+        }
+        return `
+          <div class="module-row">
+            <label class="module-check" for="${m.id}-${id}">
+              <input type="checkbox" id="${m.id}-${id}"
+                onchange="toggleDetail('${m.id}-${id}-det', this.checked)">
+              <span>${m.label}</span>
+            </label>
+            ${detailHTML}
+          </div>`;
+      }).join('');
 
       div.innerHTML = `
         <div class="person-header">
@@ -468,7 +507,9 @@
       MODULES.forEach(m => {
         modules[m.id] = { checked: checked(`${m.id}-${id}`), detail: m.detail ? val(`${m.id}-${id}-txt`) : null };
       });
-      return { name, hitrate: val(`hr-${id}`), gp: val(`gp-${id}`), modules };
+      const iqSubs = {};
+      IQ_SUBS.forEach(s => { iqSubs[s.id] = checked(`iq-${s.id}-${id}`); });
+      return { name, hitrate: val(`hr-${id}`), gp: val(`gp-${id}`), modules, iqSubs };
     }
 
     function buildModuleLines(person, limitToIds) {
@@ -502,7 +543,14 @@
         lines.push('Focus on Connected Security — particularly the importance of batteries and how they are looked after under product care.');
         lines.push('Punch the bruise of having your system go down and offer product care as the solution.');
       }
-      if (has('powerbi'))     lines.push('Walked through Power BI together — bookmarked on their computer.');
+      if (has('iq')) {
+        lines.push('Reviewed individual performance with IQ.');
+        const s = person.iqSubs || {};
+        if (s.ei)   lines.push('Focus on getting an earlier introduction into the sale.');
+        if (s.disc) lines.push('Working on using "Are you upgrading or replacing?" to help with discovery.');
+        if (s.pc)   lines.push('"Do you normally take advantage of Product Care?" — using this to open the conversation.');
+        if (s.opp)  lines.push('Identified where the opportunities lie for improvement.');
+      }
       if (has('staffcomms')) {
         const r = det('staffcomms');
         lines.push(r ? `Staff comms issue — ${r.replace(/\.$/, '')}.` : 'Staff are not receiving regular updates on where they are up to.');
@@ -533,7 +581,7 @@
         struggling: d ? `${name} has had a tough run — ${d}.` : `${name} has been having a tough run.`,
         improving:  d ? `${name} has picked things up — ${d}.` : `${name} has been on an upward trend.`,
         salvage:    d ? `${name} — salvage: ${d}.` : `No salvage issues for ${name}.`,
-        powerbi:    `${name} also got a Power BI walkthrough — bookmarked on their computer.`,
+        iq:         `${name} also had their individual performance reviewed with IQ.`,
         staffcomms: d ? `${name} — staff comms: ${d}.` : `${name} had a staff comms issue to work through.`,
         virtual:    d ? `${name} also locked in for a virtual session on ${d}.` : `${name} to have a virtual session locked in.`,
         twopic:     `${name} is also working through the 2IC role on the floor.`,
