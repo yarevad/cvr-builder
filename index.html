@@ -345,6 +345,8 @@
       <div class="card-title">Visit Details</div>
       <label>Store / Manager</label>
       <input type="text" id="storeName" placeholder="e.g. Chermside — Pete">
+      <label>Store Hit Rate %</label>
+      <input type="text" id="storeHitRate" placeholder="e.g. 24">
       <label>Visit Date</label>
       <input type="date" id="visitDate">
       <label>Visit Type</label>
@@ -678,7 +680,8 @@
     }
 
     function generate() {
-      const store = val('storeName');
+      const store       = val('storeName');
+      const storeHitRate = val('storeHitRate');
       const date  = document.getElementById('visitDate').value;
       const type  = document.getElementById('visitType').value;
 
@@ -697,7 +700,8 @@
       if (!store && people.length === 0) { showToast('Add a store name and at least one person.'); return; }
 
       const groups = groupPeople(people);
-      const parts  = [`CVR | ${store} | ${dateStr}`, '', type, ''];
+      const storeHeader = storeHitRate ? `CVR | ${store} | ${dateStr} | Store Hit Rate: ${storeHitRate}%` : `CVR | ${store} | ${dateStr}`;
+      const parts  = [storeHeader, '', type, ''];
       groups.forEach((g, i) => {
         parts.push(buildGroupText(g));
         if (i < groups.length - 1) parts.push('');
@@ -760,6 +764,7 @@
 
     function resetForm() {
       document.getElementById('storeName').value = '';
+      document.getElementById('storeHitRate').value = '';
       document.getElementById('visitDate').valueAsDate = new Date();
       document.getElementById('visitType').selectedIndex = 0;
       document.getElementById('peopleContainer').innerHTML = '';
