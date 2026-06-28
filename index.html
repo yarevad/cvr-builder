@@ -304,6 +304,21 @@
       flex-shrink: 0;
     }
     .btn-save:active { opacity: 0.82; }
+    .toggle-group { display: flex; gap: 0; margin-bottom: 13px; border-radius: 9px; overflow: hidden; border: 1.5px solid var(--border); }
+    .toggle-btn {
+      flex: 1;
+      padding: 11px;
+      border: none;
+      background: white;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s;
+    }
+    .toggle-btn:first-child { border-right: 1.5px solid var(--border); }
+    .toggle-btn.active { background: var(--blue); color: white; }
     .sub-options { flex-direction: column; gap: 2px; margin-top: 4px; }
     .module-detail.sub-options.visible { display: flex; }
     .sub-check {
@@ -343,6 +358,11 @@
     <!-- Visit Details -->
     <div class="card">
       <div class="card-title">Visit Details</div>
+      <label>Department</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="dept-elec" onclick="setDept('ELECTRICAL')">ELECTRICAL</button>
+        <button class="toggle-btn" id="dept-comp" onclick="setDept('COMPUTERS')">COMPUTERS</button>
+      </div>
       <label>Store / Manager</label>
       <input type="text" id="storeName" placeholder="e.g. Chermside — Pete">
       <label>Store Hit Rate %</label>
@@ -426,6 +446,13 @@
       { id: 'pc',   label: 'Do you normally take advantage of Product Care?' },
       { id: 'opp',  label: 'Identify where the opportunities lie for improvement', hasDetail: true },
     ];
+
+    let currentDept = 'ELECTRICAL';
+    function setDept(dept) {
+      currentDept = dept;
+      document.getElementById('dept-elec').classList.toggle('active', dept === 'ELECTRICAL');
+      document.getElementById('dept-comp').classList.toggle('active', dept === 'COMPUTERS');
+    }
 
     let personCount = 0;
 
@@ -700,7 +727,7 @@
       if (!store && people.length === 0) { showToast('Add a store name and at least one person.'); return; }
 
       const groups = groupPeople(people);
-      const storeHeader = storeHitRate ? `CVR | ${store} | ${dateStr} | Store Hit Rate: ${storeHitRate}%` : `CVR | ${store} | ${dateStr}`;
+      const storeHeader = `CVR | ${store} | ${currentDept} | ${dateStr}${storeHitRate ? ` | Store Hit Rate: ${storeHitRate}%` : ''}`;
       const parts  = [storeHeader, '', type, ''];
       groups.forEach((g, i) => {
         parts.push(buildGroupText(g));
@@ -763,6 +790,7 @@
     }
 
     function resetForm() {
+      setDept('ELECTRICAL');
       document.getElementById('storeName').value = '';
       document.getElementById('storeHitRate').value = '';
       document.getElementById('visitDate').valueAsDate = new Date();

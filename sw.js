@@ -1,4 +1,4 @@
-const CACHE = 'cvr-builder-v7';
+const CACHE = 'cvr-builder-v8';
 const ASSETS = ['/cvr-builder/', '/cvr-builder/index.html', '/cvr-builder/manifest.json'];
 
 self.addEventListener('install', e => {
