@@ -1,4 +1,4 @@
-const CACHE = 'cvr-builder-v4';
+const CACHE = 'cvr-builder-v5';
 const ASSETS = ['/cvr-builder/', '/cvr-builder/index.html', '/cvr-builder/manifest.json'];
 
 self.addEventListener('install', e => {
@@ -13,8 +13,15 @@ self.addEventListener('activate', e => {
   );
 });
 
+// Network-first: always fetch fresh when online, fall back to cache only if offline
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    fetch(e.request)
+      .then(response => {
+        const clone = response.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
